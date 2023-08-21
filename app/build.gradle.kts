@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -56,6 +57,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    packaging {
+        resources.excludes.add("META-INF/INDEX.LIST")
+    }
 }
 
 dependencies {
@@ -63,6 +68,7 @@ dependencies {
     val roomVersion = "2.5.2"
     val coilVersion = "2.4.0"
     val composeTvVersion = "1.0.0-alpha08"
+    val ktorVersion = "2.3.3"
     implementation("androidx.core:core-ktx:1.10.1")
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
@@ -108,6 +114,12 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("io.ktor:ktor-client-logging:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+
     implementation("org.jsoup:jsoup:1.16.1")
     implementation("com.google.code.gson:gson:2.10.1")
 
@@ -120,5 +132,7 @@ dependencies {
     implementation("com.google.android.exoplayer:exoplayer-common:$exoPlayerVersion")
     implementation("com.google.android.exoplayer:extension-leanback:$exoPlayerVersion")
     implementation("com.google.android.exoplayer:extension-okhttp:$exoPlayerVersion")
+
+    implementation("cn.hutool:hutool-crypto:5.8.18")
 
 }
