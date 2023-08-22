@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "nivod-tv"
 include(":app")
- 
+include(":api")

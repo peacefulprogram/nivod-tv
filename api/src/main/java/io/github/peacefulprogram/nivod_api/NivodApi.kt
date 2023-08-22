@@ -1,11 +1,13 @@
-package io.github.peacefulprogram.nivod_tv.http.api
+package io.github.peacefulprogram.nivod_api
 
 import cn.hutool.crypto.digest.MD5
-import io.github.peacefulprogram.nivod_tv.BuildConfig
-import io.github.peacefulprogram.nivod_tv.NivodApp
-import io.github.peacefulprogram.nivod_tv.http.dto.ChannelRecommendResponse
-import io.github.peacefulprogram.nivod_tv.http.dto.ChannelResponse
-import io.github.peacefulprogram.nivod_tv.http.dto.NivodResponse
+import io.github.peacefulprogram.nivod_api.dto.ChannelRecommendResponse
+import io.github.peacefulprogram.nivod_api.dto.ChannelResponse
+import io.github.peacefulprogram.nivod_api.dto.HotKeywordResponse
+import io.github.peacefulprogram.nivod_api.dto.SearchVideoResponse
+import io.github.peacefulprogram.nivod_api.dto.VideoDetailRecommendResponse
+import io.github.peacefulprogram.nivod_api.dto.VideoDetailResponse
+import io.github.peacefulprogram.nivod_api.dto.VideoStreamUrlResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
@@ -25,38 +27,39 @@ import okhttp3.logging.HttpLoggingInterceptor
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
-object NivodApi {
+class NivodApi(logRequest: Boolean = false) {
 
-    private val httpClient by lazy { createKtorClient() }
+    companion object {
 
-    private fun createKtorClient(): HttpClient {
+        const val API_SERVER = "https://api.nivodz.com"
+
+        const val REFERER = "https://www.nivod4.tv/"
+
+        const val USER_AGENT =
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+
+    }
+
+    private val httpClient by lazy { createKtorClient(logRequest) }
+
+    private fun createKtorClient(logRequest: Boolean): HttpClient {
         return HttpClient(OkHttp) {
             expectSuccess = true
-//            BrowserUserAgent()
-//            if (BuildConfig.DEBUG) {
-//                install(Logging) {
-//                    logger = Logger.ANDROID
-//                    level = LogLevel.ALL
-//                }
-//            }
             install(ContentNegotiation) {
                 json(Json {
-                    encodeDefaults = true
                     isLenient = true
                     allowSpecialFloatingPointValues = true
                     allowStructuredMapKeys = true
-                    prettyPrint = false
-                    useArrayPolymorphism = false
                     ignoreUnknownKeys = true
                 })
             }
             defaultRequest {
-                url(NivodApp.API_SERVER)
-                header(HttpHeaders.UserAgent, NivodApp.USER_AGENT)
-                header(HttpHeaders.Referrer, NivodApp.REFERER)
+                url(API_SERVER)
+                header(HttpHeaders.UserAgent, USER_AGENT)
+                header(HttpHeaders.Referrer, REFERER)
             }
             engine {
-                if (BuildConfig.DEBUG) {
+                if (logRequest) {
                     addNetworkInterceptor(HttpLoggingInterceptor().apply {
                         level = HttpLoggingInterceptor.Level.HEADERS
                     })
@@ -69,7 +72,8 @@ object NivodApi {
                     if (plainBytes == null) {
                         resp
                     } else {
-                        resp.newBuilder().body(plainBytes.toResponseBody(resp.body!!.contentType()))
+                        resp.newBuilder()
+                            .body(plainBytes.toResponseBody(resp.body!!.contentType()))
                             .build()
                     }
                 }
@@ -157,7 +161,7 @@ object NivodApi {
         }
     }
 
-    suspend fun queryChannels(): NivodResponse<ChannelResponse> {
+    suspend fun queryChannels(): ChannelResponse {
         return httpClient.post("/show/channel/list/WEB/3.2") {
             withSign()
         }
@@ -177,6 +181,67 @@ object NivodApi {
                     "more" to "1"
                 )
             )
+        }.body<ChannelRecommendResponse>()
+            .run {
+                copy(banners = banners.filter { it.show != null }) // 排除掉广告
+            }
+    }
+
+    suspend fun queryVideoDetail(showIdCode: String): VideoDetailResponse {
+        return httpClient.post("/show/detail/WEB/3.2") {
+            withSign(body = mapOf("show_id_code" to showIdCode))
         }.body()
     }
+
+    suspend fun queryVideoDetailRecommend(
+        channelId: Int,
+        showTypeId: Int
+    ): VideoDetailRecommendResponse {
+        return httpClient.post("/show/detail/recommend/WEB/3.2") {
+            withSign(
+                body = mapOf(
+                    "channel_id" to channelId.toString(),
+                    "show_type_id" to showTypeId.toString()
+                )
+            )
+        }.body()
+    }
+
+    suspend fun queryVideoStreamUrl(
+        showIdCode: String,
+        playIdCode: String
+    ): VideoStreamUrlResponse {
+        return httpClient.post("/show/play/info/WEB/3.2") {
+            withSign(
+                body = mapOf(
+                    "show_id_code" to showIdCode,
+                    "play_id_code" to playIdCode
+                )
+            )
+        }.body()
+    }
+
+    suspend fun searchVideo(
+        keyword: String,
+        start: Int,
+        keywordType: SearchKeywordType = SearchKeywordType.ALL
+    ): SearchVideoResponse {
+        return httpClient.post("/show/search/WEB/3.2") {
+            withSign(
+                body = mapOf(
+                    "keyword" to keyword,
+                    "start" to start.toString(),
+                    "cat_id" to "1",
+                    "keyword_type" to keywordType.code
+                )
+            )
+        }.body()
+    }
+
+    suspend fun queryHotKeyword(): HotKeywordResponse {
+        return httpClient.post("https://api.nivodz.com/show/search/hotwords/WEB/3.2") {
+            withSign()
+        }.body()
+    }
+
 }

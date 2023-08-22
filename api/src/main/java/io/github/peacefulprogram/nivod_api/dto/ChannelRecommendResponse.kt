@@ -1,4 +1,4 @@
-package io.github.peacefulprogram.nivod_tv.http.dto
+package io.github.peacefulprogram.nivod_api.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -82,11 +82,11 @@ data class ChannelRecommendShow(
     @SerialName("pageBgImg")
     val pageBgImg: String,
     @SerialName("playLangs")
-    val playLangs: List<ChannelRecommendPlayLang>,
+    val playLangs: List<VideoPlayLang>,
     @SerialName("playResolutions")
     val playResolutions: List<String>,
     @SerialName("playSources")
-    val playSources: List<ChannelRecommendPlaySource>,
+    val playSources: List<VideoPlaySource>,
     @SerialName("postYear")
     val postYear: Int,
     @SerialName("rating")
@@ -112,7 +112,7 @@ data class ChannelRecommendShow(
     @SerialName("showTypeId")
     val showTypeId: Int,
     @SerialName("showTypeName")
-    val showTypeName: String,
+    val showTypeName: String = "",
     @SerialName("status")
     val status: Int,
     @SerialName("titleImg")
@@ -123,21 +123,6 @@ data class ChannelRecommendShow(
     val voteUp: Int
 )
 
-@Serializable
-data class ChannelRecommendPlayLang(
-    @SerialName("langId")
-    val langId: Int,
-    @SerialName("langName")
-    val langName: String
-)
-
-@Serializable
-data class ChannelRecommendPlaySource(
-    @SerialName("sourceId")
-    val sourceId: Int,
-    @SerialName("sourceName")
-    val sourceName: String
-)
 
 @Serializable
 data class ChannelRecommendRow(
@@ -162,83 +147,11 @@ data class ChannelRecommendCell(
     @SerialName("img")
     val img: String,
     @SerialName("intro")
-    val intro: String,
+    val intro: String = "",
     @SerialName("rowId")
     val rowId: Int,
     @SerialName("show")
-    val show: ChannelRecommendShowX,
+    val show: ChannelRecommendShow,
     @SerialName("title")
     val title: String
-)
-
-@Serializable
-data class ChannelRecommendShowX(
-    @SerialName("actors")
-    val actors: String,
-    @SerialName("addDate")
-    val addDate: Long,
-    @SerialName("catId")
-    val catId: Int,
-    @SerialName("channelId")
-    val channelId: Int,
-    @SerialName("channelName")
-    val channelName: String,
-    @SerialName("commentCount")
-    val commentCount: Int,
-    @SerialName("director")
-    val director: String,
-    @SerialName("episodesTxt")
-    val episodesTxt: String,
-    @SerialName("favoriteCount")
-    val favoriteCount: Int,
-    @SerialName("hot")
-    val hot: Int,
-    @SerialName("inSeries")
-    val inSeries: Int,
-    @SerialName("isEpisodes")
-    val isEpisodes: Int,
-    @SerialName("isEpisodesEnd")
-    val isEpisodesEnd: Int,
-    @SerialName("pageBgImg")
-    val pageBgImg: String,
-    @SerialName("playLangs")
-    val playLangs: List<ChannelRecommendPlayLang>,
-    @SerialName("playResolutions")
-    val playResolutions: List<String>,
-    @SerialName("playSources")
-    val playSources: List<ChannelRecommendPlaySource>,
-    @SerialName("postYear")
-    val postYear: Int,
-    @SerialName("rating")
-    val rating: Int,
-    @SerialName("regionId")
-    val regionId: Int,
-    @SerialName("regionName")
-    val regionName: String,
-    @SerialName("shareCount")
-    val shareCount: Int,
-    @SerialName("shareForced")
-    val shareForced: Int,
-    @SerialName("showId")
-    val showId: Int,
-    @SerialName("showIdCode")
-    val showIdCode: String,
-    @SerialName("showImg")
-    val showImg: String,
-    @SerialName("showTcTitle")
-    val showTcTitle: String,
-    @SerialName("showTitle")
-    val showTitle: String,
-    @SerialName("showTypeId")
-    val showTypeId: Int,
-    @SerialName("showTypeName")
-    val showTypeName: String,
-    @SerialName("status")
-    val status: Int,
-    @SerialName("titleImg")
-    val titleImg: String,
-    @SerialName("voteDown")
-    val voteDown: Int,
-    @SerialName("voteUp")
-    val voteUp: Int
 )

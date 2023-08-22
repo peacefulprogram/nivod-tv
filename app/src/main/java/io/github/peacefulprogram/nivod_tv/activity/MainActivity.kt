@@ -9,9 +9,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Text
-import io.github.peacefulprogram.nivod_tv.http.api.NivodApi
+import io.github.peacefulprogram.nivod_api.NivodApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.koin.android.ext.android.get
 
 class MainActivity : ComponentActivity() {
 
@@ -19,9 +20,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val api: NivodApi = get()
             LaunchedEffect(Unit) {
                 val resp = withContext(Dispatchers.IO) {
-                    NivodApi.queryRecommendationOfChannel(start = 0, channelId = null)
+                    api.queryRecommendationOfChannel(start = 0, channelId = null)
                 }
                 println(resp.list)
             }
