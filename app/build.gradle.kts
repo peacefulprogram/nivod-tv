@@ -14,6 +14,9 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
 
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
@@ -58,12 +61,17 @@ android {
     }
 
     packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
         resources.excludes.add("META-INF/INDEX.LIST")
     }
 }
 
 dependencies {
 
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     val roomVersion = "2.5.2"
     val coilVersion = "2.4.0"
     val composeTvVersion = "1.0.0-alpha08"

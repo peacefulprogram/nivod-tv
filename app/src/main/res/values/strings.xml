@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">泥视频</string>
+    <string name="button_retry">重试</string>
+    <string name="button_delete_all">删除全部</string>
+    <string name="button_delete">删除</string>
+    <string name="playlist_name">剧集</string>
+    <string name="related_videos">猜你喜欢</string>
+    <string name="video_director">导演</string>
+    <string name="video_actor">演员</string>
+    <string name="video_description">简介</string>
 </resources>

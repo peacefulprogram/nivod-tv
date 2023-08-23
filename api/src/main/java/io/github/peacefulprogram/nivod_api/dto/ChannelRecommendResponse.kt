@@ -1,5 +1,6 @@
 package io.github.peacefulprogram.nivod_api.dto
 
+import io.github.peacefulprogram.nivod_api.BasicVideoInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -121,7 +122,14 @@ data class ChannelRecommendShow(
     val voteDown: Int,
     @SerialName("voteUp")
     val voteUp: Int
-)
+) : BasicVideoInfo {
+    override val title: String
+        get() = showTitle
+    override val subTitle: String
+        get() = episodesTxt
+    override val imageUrl: String
+        get() = showImg
+}
 
 
 @Serializable
