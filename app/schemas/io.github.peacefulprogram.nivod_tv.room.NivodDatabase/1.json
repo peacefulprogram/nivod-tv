@@ -1,0 +1,138 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "d078e21bce010315214420871a8b91ad",
+    "entities": [
+      {
+        "tableName": "search_his",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`keyword` TEXT NOT NULL, `updateTime` INTEGER NOT NULL, PRIMARY KEY(`keyword`))",
+        "fields": [
+          {
+            "fieldPath": "keyword",
+            "columnName": "keyword",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updateTime",
+            "columnName": "updateTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "keyword"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "video_his",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`showIdCode` TEXT NOT NULL, `showTitle` TEXT NOT NULL, `showImage` TEXT NOT NULL, `playIdCode` TEXT, PRIMARY KEY(`showIdCode`))",
+        "fields": [
+          {
+            "fieldPath": "showIdCode",
+            "columnName": "showIdCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "showTitle",
+            "columnName": "showTitle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "showImage",
+            "columnName": "showImage",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playIdCode",
+            "columnName": "playIdCode",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "showIdCode"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "episode_his",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`playIdCode` TEXT NOT NULL, `showIdCode` TEXT NOT NULL, `episodeName` TEXT NOT NULL, `progress` INTEGER NOT NULL, `duration` INTEGER NOT NULL, `updateTime` INTEGER NOT NULL, PRIMARY KEY(`playIdCode`))",
+        "fields": [
+          {
+            "fieldPath": "playIdCode",
+            "columnName": "playIdCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "showIdCode",
+            "columnName": "showIdCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "episodeName",
+            "columnName": "episodeName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "progress",
+            "columnName": "progress",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "duration",
+            "columnName": "duration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updateTime",
+            "columnName": "updateTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "playIdCode"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_episode_his_showIdCode",
+            "unique": false,
+            "columnNames": [
+              "showIdCode"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_episode_his_showIdCode` ON `${TABLE_NAME}` (`showIdCode`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd078e21bce010315214420871a8b91ad')"
+    ]
+  }
+}

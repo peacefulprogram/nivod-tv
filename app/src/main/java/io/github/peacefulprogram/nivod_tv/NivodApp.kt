@@ -11,6 +11,7 @@ import coil.ImageLoaderFactory
 import io.github.peacefulprogram.nivod_api.NivodApi
 import io.github.peacefulprogram.nivod_tv.room.NivodDatabase
 import io.github.peacefulprogram.nivod_tv.viewmodel.MainViewModel
+import io.github.peacefulprogram.nivod_tv.viewmodel.PlaybackViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.VideoDetailViewModel
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -62,6 +63,17 @@ class NivodApp : Application(), ImageLoaderFactory {
         viewModelOf(::MainViewModel)
         viewModel { parameters ->
             VideoDetailViewModel(parameters.get(), get(), get(), get())
+        }
+        viewModel { parameters ->
+            PlaybackViewModel(
+                parameters.get(),
+                parameters.get(),
+                parameters.get(),
+                parameters.get(),
+                get(),
+                get(),
+                get()
+            )
         }
     }
 

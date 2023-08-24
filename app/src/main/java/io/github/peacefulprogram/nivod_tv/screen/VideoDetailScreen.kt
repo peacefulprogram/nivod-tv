@@ -70,6 +70,7 @@ import io.github.peacefulprogram.nivod_api.dto.VideoDetailEntity
 import io.github.peacefulprogram.nivod_api.dto.VideoDetailPlay
 import io.github.peacefulprogram.nivod_api.dto.VideoDetailRecommend
 import io.github.peacefulprogram.nivod_tv.R
+import io.github.peacefulprogram.nivod_tv.activity.PlaybackActivity
 import io.github.peacefulprogram.nivod_tv.activity.VideoDetailActivity
 import io.github.peacefulprogram.nivod_tv.common.Resource
 import io.github.peacefulprogram.nivod_tv.common.compose.ErrorTip
@@ -77,6 +78,7 @@ import io.github.peacefulprogram.nivod_tv.common.compose.FocusGroup
 import io.github.peacefulprogram.nivod_tv.common.compose.Loading
 import io.github.peacefulprogram.nivod_tv.common.compose.VideoCard
 import io.github.peacefulprogram.nivod_tv.ext.secondsToDuration
+import io.github.peacefulprogram.nivod_tv.playback.VideoEpisode
 import io.github.peacefulprogram.nivod_tv.viewmodel.VideoDetailViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -162,10 +164,23 @@ fun VideoDetailScreen(viewModel: VideoDetailViewModel) {
                         }
                     }
 
-                }, onEpisodeClick = {
+                }, onEpisodeClick = { epIndex, _ ->
                     coroutineScope.launch(Dispatchers.IO) {
                         viewModel.saveVideoHistory(videoDetail)
-                        // todo: 跳转到播放页
+                        val eps = videoDetail.plays.map {
+                            VideoEpisode(
+                                playIdCode = it.playIdCode,
+                                episodeName = it.episodeName
+                            )
+                        }
+                        val playIndex = if (reverseEpisode) eps.size - epIndex - 1 else epIndex
+                        PlaybackActivity.startActivity(
+                            context = context,
+                            showIdCode = videoDetail.showIdCode,
+                            showTitle = videoDetail.showTitle,
+                            playEpIndex = playIndex,
+                            episodes = eps
+                        )
                     }
                 })
             }
@@ -249,7 +264,7 @@ fun PlayListRow(
     episodes: List<VideoDetailPlay>,
     title: @Composable () -> Unit,
     listState: TvLazyListState = rememberTvLazyListState(),
-    onEpisodeClick: (VideoDetailPlay) -> Unit
+    onEpisodeClick: (episodeIndex: Int, episode: VideoDetailPlay) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         title()
@@ -268,7 +283,7 @@ fun PlayListRow(
                                 }
                             }, tagName = ep.displayName
                         ) {
-                            onEpisodeClick(ep)
+                            onEpisodeClick(epIndex, ep)
                         }
                     }
                     item { Spacer(modifier = Modifier.width(5.dp)) }

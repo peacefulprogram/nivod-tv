@@ -115,16 +115,15 @@ dependencies {
     implementation("io.insert-koin:koin-android:3.4.2")
     implementation("io.insert-koin:koin-androidx-compose:3.4.5")
 
-    val exoPlayerVersion = "2.19.1"
 
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
 
-    implementation("com.google.android.exoplayer:exoplayer-core:$exoPlayerVersion")
-    implementation("com.google.android.exoplayer:exoplayer-hls:$exoPlayerVersion")
-    implementation("com.google.android.exoplayer:exoplayer-common:$exoPlayerVersion")
-    implementation("com.google.android.exoplayer:extension-leanback:$exoPlayerVersion")
-    implementation("com.google.android.exoplayer:extension-okhttp:$exoPlayerVersion")
 
+    val media3Version = "1.1.1"
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-ui:$media3Version")
+    implementation("androidx.media3:media3-exoplayer-hls:$media3Version")
+    implementation("androidx.media3:media3-ui-leanback:$media3Version")
 
     implementation(project(":api"))
 
