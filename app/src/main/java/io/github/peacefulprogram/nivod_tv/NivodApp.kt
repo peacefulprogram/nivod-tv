@@ -8,10 +8,15 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import coil.ImageLoader
 import coil.ImageLoaderFactory
+import io.github.peacefulprogram.nivod_api.DefaultSSLSocketFactory
+import io.github.peacefulprogram.nivod_api.DefaultTrustManager
 import io.github.peacefulprogram.nivod_api.NivodApi
 import io.github.peacefulprogram.nivod_tv.room.NivodDatabase
 import io.github.peacefulprogram.nivod_tv.viewmodel.MainViewModel
+import io.github.peacefulprogram.nivod_tv.viewmodel.PlayHistoryViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.PlaybackViewModel
+import io.github.peacefulprogram.nivod_tv.viewmodel.SearchResultViewModel
+import io.github.peacefulprogram.nivod_tv.viewmodel.SearchViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.VideoDetailViewModel
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -22,6 +27,7 @@ import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import java.util.concurrent.Executors
+import javax.net.ssl.HttpsURLConnection
 
 class NivodApp : Application(), ImageLoaderFactory {
 
@@ -30,6 +36,7 @@ class NivodApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
         context = this
+        HttpsURLConnection.setDefaultSSLSocketFactory(DefaultSSLSocketFactory)
         startKoin {
             androidContext(this@NivodApp)
             androidLogger()
@@ -44,7 +51,12 @@ class NivodApp : Application(), ImageLoaderFactory {
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
-        .okHttpClient(OkHttpClient.Builder().addInterceptor(getRefererInterceptor()).build())
+        .okHttpClient(
+            OkHttpClient.Builder()
+                .sslSocketFactory(DefaultSSLSocketFactory, DefaultTrustManager)
+                .hostnameVerifier { _, _ -> true }
+                .addInterceptor(getRefererInterceptor()).build()
+        )
         .build()
 
     private fun getRefererInterceptor() = Interceptor { chain ->
@@ -75,6 +87,9 @@ class NivodApp : Application(), ImageLoaderFactory {
                 get()
             )
         }
+        viewModelOf(::SearchViewModel)
+        viewModelOf(::PlayHistoryViewModel)
+        viewModel { parameters -> SearchResultViewModel(parameters.get(), get()) }
     }
 
     private fun roomModule() = module {

@@ -8,4 +8,15 @@
     <string name="video_director">导演</string>
     <string name="video_actor">演员</string>
     <string name="video_description">简介</string>
+    <string name="recommend_search_kw">当前热搜:</string>
+    <string name="search_history">搜索历史:</string>
+    <string name="speak_search_keyword">请说出要搜索的内容</string>
+    <string name="input_search_keyword">输入关键词</string>
+    <string name="confirm_delete_template">是否删除%s?</string>
+    <string name="title_search_result">搜索结果</string>
+    <string name="grid_no_data_tip">什么也没有哦</string>
+    <string name="playback_history">播放历史</string>
+    <string name="click_ok_del_tip">长按【ok】可删除</string>
+    <string name="video_year">年份</string>
+    <string name="video_region">地区</string>
 </resources>

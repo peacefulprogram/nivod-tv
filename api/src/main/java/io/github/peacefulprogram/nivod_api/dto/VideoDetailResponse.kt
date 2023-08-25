@@ -88,7 +88,7 @@ data class VideoDetailEntity(
     @SerialName("showTypeId")
     val showTypeId: Int,
     @SerialName("showTypeName")
-    val showTypeName: String,
+    val showTypeName: String = "",
     @SerialName("status")
     val status: Int,
     @SerialName("titleImg")

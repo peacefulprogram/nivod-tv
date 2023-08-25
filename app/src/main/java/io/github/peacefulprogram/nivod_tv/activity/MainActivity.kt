@@ -14,11 +14,14 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import io.github.peacefulprogram.nivod_tv.R
+import io.github.peacefulprogram.nivod_tv.ext.showShortToast
 import io.github.peacefulprogram.nivod_tv.screen.MainScreen
 import io.github.peacefulprogram.nivod_tv.theme.NivodTheme
 import org.koin.android.ext.android.get
 
 class MainActivity : ComponentActivity() {
+
+    private var lastClickBackTime: Long = 0L
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +43,16 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onBackPressed() {
+        val now = System.currentTimeMillis()
+        if (now - lastClickBackTime < 2000) {
+            super.onBackPressed()
+        } else {
+            lastClickBackTime = now
+            this.showShortToast("再次点击退出应用")
         }
     }
 

@@ -1,12 +1,14 @@
 package io.github.peacefulprogram.nivod_tv.viewmodel
 
 import android.util.Log
+import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.peacefulprogram.nivod_api.NivodApi
 import io.github.peacefulprogram.nivod_api.dto.VideoDetailEntity
 import io.github.peacefulprogram.nivod_api.dto.VideoDetailRecommend
 import io.github.peacefulprogram.nivod_tv.common.Resource
+import io.github.peacefulprogram.nivod_tv.ext.runCoroutineCompatibleCatching
 import io.github.peacefulprogram.nivod_tv.room.dao.EpisodeHistoryDao
 import io.github.peacefulprogram.nivod_tv.room.dao.VideoHistoryDao
 import io.github.peacefulprogram.nivod_tv.room.entity.EpisodeHistoryEntity
@@ -58,10 +60,19 @@ class VideoDetailViewModel(
     fun loadVideoDetail() {
         viewModelScope.launch(Dispatchers.IO) {
             _videoInfo.emit(Resource.Loading)
-            runCatching {
+            runCoroutineCompatibleCatching {
                 api.queryVideoDetail(showIdCode).entity
             }.onSuccess {
-                _videoInfo.emit(Resource.Success(it))
+                val detail = it.copy(
+                    plays = it.plays.map { ep ->
+                        if (ep.episodeName.isDigitsOnly()) {
+                            ep.copy(episodeName = "第${ep.episodeName}集")
+                        } else {
+                            ep
+                        }
+                    }
+                )
+                _videoInfo.emit(Resource.Success(detail))
             }.onFailure { ex ->
                 Log.e(TAG, "loadVideoDetail: ${ex.message}", ex)
                 _videoInfo.emit(Resource.Error("查询详情失败:${ex.message}", ex))
@@ -80,7 +91,7 @@ class VideoDetailViewModel(
     private fun loadRecommend(showTypeId: Int, channelId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             _recommends.emit(Resource.Loading)
-            runCatching {
+            runCoroutineCompatibleCatching {
                 api.queryVideoDetailRecommend(channelId, showTypeId).list
             }.onSuccess {
                 _recommends.emit(Resource.Success(it))

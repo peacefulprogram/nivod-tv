@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="video_preview_card_width">165dp</dimen>
-    <dimen name="video_preview_card_height">220dp</dimen>
+    <dimen name="video_preview_card_width">156dp</dimen>
+    <dimen name="video_preview_card_height">208dp</dimen>
     <dimen name="screen_h_padding">10dp</dimen>
     <dimen name="screen_v_padding">10dp</dimen>
     <dimen name="video_card_h_gap">12dp</dimen>

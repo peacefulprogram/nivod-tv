@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -124,6 +125,9 @@ fun VideoDetailScreen(viewModel: VideoDetailViewModel) {
         }
     }
     val coroutineScope = rememberCoroutineScope()
+    var shouldFocusFirstRecommend = rememberSaveable {
+        false
+    }
     TvLazyColumn(
         modifier = Modifier.fillMaxSize(), content = {
             item {
@@ -191,10 +195,15 @@ fun VideoDetailScreen(viewModel: VideoDetailViewModel) {
                     }
 
                     is Resource.Success -> {
-                        RelativeVideoRow(recommendRes.data) {
+                        RelativeVideoRow(
+                            recommendRes.data,
+                            shouldFocusFirstOne = shouldFocusFirstRecommend
+                        ) {
+                            shouldFocusFirstRecommend = true
                             viewModel.reloadRecommend()
                             true
                         }
+                        if (shouldFocusFirstRecommend) shouldFocusFirstRecommend = false
                     }
 
                     is Resource.Error -> {
@@ -210,10 +219,14 @@ fun VideoDetailScreen(viewModel: VideoDetailViewModel) {
 @Composable
 fun RelativeVideoRow(
     videos: List<VideoDetailRecommend>,
+    shouldFocusFirstOne: Boolean,
     onRequestRefresh: () -> Boolean = { false }
 ) {
     if (videos.isEmpty()) {
         return
+    }
+    val firstItemFocusRequester = remember {
+        FocusRequester()
     }
     val context = LocalContext.current
     val cardWidth = dimensionResource(id = R.dimen.video_preview_card_width) * 0.8f
@@ -232,6 +245,7 @@ fun RelativeVideoRow(
                             if (videoIndex == 0) {
                                 this
                                     .initiallyFocused()
+                                    .focusRequester(firstItemFocusRequester)
                             } else {
                                 this.restorableFocus()
                             }
@@ -255,6 +269,11 @@ fun RelativeVideoRow(
             )
         }
         Spacer(modifier = Modifier.height(verticalGap))
+    }
+    LaunchedEffect(shouldFocusFirstOne) {
+        if (shouldFocusFirstOne && videos.isNotEmpty()) {
+            runCatching { firstItemFocusRequester.requestFocus() }
+        }
     }
 }
 
@@ -281,7 +300,7 @@ fun PlayListRow(
                                 } else {
                                     restorableFocus()
                                 }
-                            }, tagName = ep.displayName
+                            }, tagName = ep.episodeName
                         ) {
                             onEpisodeClick(epIndex, ep)
                         }
@@ -302,7 +321,6 @@ fun VideoInfoRow(videoDetail: VideoDetailEntity, viewModel: VideoDetailViewModel
     var showDescDialog by remember {
         mutableStateOf(false)
     }
-    val context = LocalContext.current
 
     Row(
         Modifier
@@ -356,6 +374,12 @@ fun VideoInfoRow(videoDetail: VideoDetailEntity, viewModel: VideoDetailViewModel
             ProvideTextStyle(value = MaterialTheme.typography.bodySmall) {
                 TvLazyColumn(
                     content = {
+                        item {
+                            Text(text = stringResource(R.string.video_year) + ": " + videoDetail.postYear)
+                        }
+                        item {
+                            Text(text = stringResource(R.string.video_region) + ": " + videoDetail.regionName)
+                        }
                         if (videoDetail.actors.isNotEmpty()) {
                             item {
                                 Text(text = stringResource(id = R.string.video_actor) + ": " + videoDetail.actors)

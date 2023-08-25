@@ -33,7 +33,7 @@ interface VideoHistoryDao {
             e.progress,
             e.duration
         from video_his v, episode_his e 
-        where v.showIdCode = e.playIdCode
+        where v.playIdCode = e.playIdCode
         order by e.updateTime desc
     """
     )

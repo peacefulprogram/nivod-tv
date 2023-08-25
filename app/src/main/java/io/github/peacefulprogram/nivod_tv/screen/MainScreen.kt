@@ -1,9 +1,21 @@
 package io.github.peacefulprogram.nivod_tv.screen
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -16,10 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.dp
@@ -30,10 +45,18 @@ import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
+import androidx.tv.material3.CardScale
+import androidx.tv.material3.Carousel
+import androidx.tv.material3.CompactCard
 import androidx.tv.material3.ExperimentalTvMaterial3Api
+import androidx.tv.material3.Icon
+import androidx.tv.material3.IconButton
 import androidx.tv.material3.Text
+import coil.compose.AsyncImage
 import io.github.peacefulprogram.nivod_api.dto.ChannelInfo
 import io.github.peacefulprogram.nivod_tv.R
+import io.github.peacefulprogram.nivod_tv.activity.PlayHistoryActivity
+import io.github.peacefulprogram.nivod_tv.activity.SearchActivity
 import io.github.peacefulprogram.nivod_tv.activity.VideoDetailActivity
 import io.github.peacefulprogram.nivod_tv.common.Resource
 import io.github.peacefulprogram.nivod_tv.common.compose.CustomTabRow
@@ -43,6 +66,12 @@ import io.github.peacefulprogram.nivod_tv.common.compose.Loading
 import io.github.peacefulprogram.nivod_tv.common.compose.VideoCard
 import io.github.peacefulprogram.nivod_tv.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
+
+private fun isRefreshEvent(event: KeyEvent) =
+    event.key == Key.Menu && event.type == KeyEventType.KeyUp
+
+private fun isBackToTopEvent(event: KeyEvent) =
+    event.key == Key.Back && event.type == KeyEventType.KeyUp
 
 @OptIn(ExperimentalTvMaterial3Api::class, ExperimentalTvFoundationApi::class)
 @Composable
@@ -79,10 +108,47 @@ fun MainScreen(viewModel: MainViewModel) {
         var selectedTabIndex by remember {
             mutableIntStateOf(0)
         }
+        FocusGroup {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IconButton(
+                    onClick = {
+                        SearchActivity.startActivity(context)
+                    }, modifier = Modifier.initiallyFocused()
+                ) {
+                    Icon(imageVector = Icons.Default.Search, contentDescription = "search")
+                }
+                IconButton(
+                    onClick = {
+                        PlayHistoryActivity.startActivity(context)
+                    }, modifier = Modifier.restorableFocus()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.History, contentDescription = "history"
+                    )
+                }
+
+            }
+        }
+        Spacer(modifier = Modifier.height(5.dp))
+
+        val currentChannelId = allChannelIdAndNames.first[selectedTabIndex]
+        val pagingData =
+            viewModel.getChannelRecommendPagingSource(currentChannelId)
+                .collectAsLazyPagingItems()
+
         CustomTabRow(
+            modifier = Modifier
+                .onPreviewKeyEvent {
+                    if (isRefreshEvent(it)) {
+                        pagingData.refresh()
+                        true
+                    } else {
+                        false
+                    }
+                }
+                .focusRequester(channelFocusRequester),
             selectedTabIndex = selectedTabIndex,
             tabs = allChannelIdAndNames.second,
-            modifier = Modifier.focusRequester(channelFocusRequester)
         ) { selectedIndex ->
             selectedTabIndex = selectedIndex
         }
@@ -92,10 +158,6 @@ fun MainScreen(viewModel: MainViewModel) {
         }
 
         Spacer(modifier = Modifier.height(10.dp))
-
-        val pagingData =
-            viewModel.getChannelRecommendPagingSource(allChannelIdAndNames.first[selectedTabIndex])
-                .collectAsLazyPagingItems()
         val refreshState = pagingData.loadState.refresh
         if (refreshState == LoadState.Loading) {
             Loading()
@@ -112,12 +174,76 @@ fun MainScreen(viewModel: MainViewModel) {
         val focusScale = 1.1f
         val verticalGap = videoCardHeight * (focusScale - 1f)
         val horizontalGap = videoCardHeight * (focusScale - 1f)
-
+        val bannerList = viewModel.getChannelBanners(currentChannelId)
+            .collectAsState().value
         val lazyColumnState = rememberTvLazyListState()
         val coroutineScope = rememberCoroutineScope()
         TvLazyColumn(
             state = lazyColumnState,
             content = {
+                if (bannerList.isNotEmpty()) {
+                    item {
+                        val switchAnimation = (slideInHorizontally() + fadeIn()).togetherWith(
+                            (slideOutHorizontally() + fadeOut())
+                        )
+                        Carousel(
+                            itemCount = bannerList.size,
+                            contentTransformStartToEnd = switchAnimation,
+                            contentTransformEndToStart = switchAnimation,
+                            modifier = Modifier
+                                .height(dimensionResource(id = R.dimen.video_preview_card_height) * 1.5f)
+                                .onPreviewKeyEvent { keyEvent ->
+                                    if (isBackToTopEvent(keyEvent)) {
+                                        coroutineScope.launch {
+                                            lazyColumnState.scrollToItem(0)
+                                            channelFocusRequester.requestFocus()
+                                        }
+                                        true
+                                    } else if (isRefreshEvent(event = keyEvent)) {
+                                        pagingData.refresh()
+                                        channelFocusRequester.requestFocus()
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                }
+                        ) { bannerIndex ->
+                            val banner = bannerList[bannerIndex]
+                            val imageUrl = banner.first
+                            val bannerShow = banner.second
+                            CompactCard(
+                                onClick = {
+                                    VideoDetailActivity.startActivity(
+                                        context,
+                                        bannerShow.showIdCode
+                                    )
+                                },
+                                scale = CardScale.None,
+                                image = {
+                                    AsyncImage(
+                                        model = imageUrl,
+                                        contentDescription = bannerShow.showTitle,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                },
+                                title = {
+                                    Text(
+                                        text = bannerShow.showTitle,
+                                        modifier = Modifier.padding(start = 20.dp)
+                                    )
+                                },
+                                subtitle = {
+                                    Text(
+                                        text = bannerShow.episodesTxt,
+                                        Modifier.padding(start = 20.dp, bottom = 10.dp)
+                                    )
+                                },
+                                modifier = Modifier
+                            )
+                        }
+                    }
+                }
                 items(
                     count = pagingData.itemCount,
                     key = { pagingData[it]?.blockId ?: "" }) { blockIndex ->
@@ -160,13 +286,13 @@ fun MainScreen(viewModel: MainViewModel) {
                                                 )
                                             },
                                             onVideoKeyEvent = { _, keyEvent ->
-                                                if (keyEvent.key == Key.Back && keyEvent.type == KeyEventType.KeyUp) {
+                                                if (isBackToTopEvent(keyEvent)) {
                                                     coroutineScope.launch {
                                                         lazyColumnState.scrollToItem(0)
                                                         channelFocusRequester.requestFocus()
                                                     }
                                                     true
-                                                } else if (keyEvent.key == Key.Menu && keyEvent.type == KeyEventType.KeyUp) {
+                                                } else if (isRefreshEvent(keyEvent)) {
                                                     pagingData.refresh()
                                                     channelFocusRequester.requestFocus()
                                                     true

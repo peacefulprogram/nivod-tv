@@ -27,7 +27,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
-class NivodApi(logRequest: Boolean = false) {
+class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean = true) {
 
     companion object {
 
@@ -63,6 +63,12 @@ class NivodApi(logRequest: Boolean = false) {
                     addNetworkInterceptor(HttpLoggingInterceptor().apply {
                         level = HttpLoggingInterceptor.Level.HEADERS
                     })
+                }
+                config {
+                    if (disableSSLCheck) {
+                        sslSocketFactory(DefaultSSLSocketFactory, DefaultTrustManager)
+                        hostnameVerifier { _, _ -> true }
+                    }
                 }
                 addInterceptor { chain ->
                     val resp = chain.proceed(chain.request())
