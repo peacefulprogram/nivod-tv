@@ -1,6 +1,8 @@
 package io.github.peacefulprogram.nivod_api.dto
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 @Serializable
 data class ChannelResponse(
@@ -12,7 +14,11 @@ data class ChannelResponse(
 @Serializable
 data class ChannelInfo(
     val channelId: Int,
-    val channelName: String,
-    val catId: Int,
-    val notice: String = ""
-)
+    val channelName: String
+) {
+    companion object {
+        fun fromJsonArray(json: String): List<ChannelInfo> = Json.decodeFromString(json)
+
+        fun toJson(channels: List<ChannelInfo>) = Json.encodeToString(channels)
+    }
+}
