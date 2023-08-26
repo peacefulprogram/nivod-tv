@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
@@ -55,6 +56,7 @@ import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import io.github.peacefulprogram.nivod_api.dto.ChannelInfo
 import io.github.peacefulprogram.nivod_tv.R
+import io.github.peacefulprogram.nivod_tv.activity.CategoriesActivity
 import io.github.peacefulprogram.nivod_tv.activity.PlayHistoryActivity
 import io.github.peacefulprogram.nivod_tv.activity.SearchActivity
 import io.github.peacefulprogram.nivod_tv.activity.VideoDetailActivity
@@ -127,6 +129,16 @@ fun MainScreen(viewModel: MainViewModel) {
                     )
                 }
 
+                IconButton(
+                    onClick = {
+                        CategoriesActivity.startActivity(context)
+                    }, modifier = Modifier.restorableFocus()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Category, contentDescription = "category"
+                    )
+                }
+
             }
         }
         Spacer(modifier = Modifier.height(5.dp))
@@ -149,6 +161,12 @@ fun MainScreen(viewModel: MainViewModel) {
                 .focusRequester(channelFocusRequester),
             selectedTabIndex = selectedTabIndex,
             tabs = allChannelIdAndNames.second,
+            onTabClick = {
+                CategoriesActivity.startActivity(
+                    context,
+                    allChannelIdAndNames.first[it]
+                )
+            }
         ) { selectedIndex ->
             selectedTabIndex = selectedIndex
         }
@@ -239,7 +257,7 @@ fun MainScreen(viewModel: MainViewModel) {
                                         Modifier.padding(start = 20.dp, bottom = 10.dp)
                                     )
                                 },
-                                modifier = Modifier
+                                modifier = Modifier.padding(2.dp)
                             )
                         }
                     }

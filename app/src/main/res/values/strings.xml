@@ -19,4 +19,7 @@
     <string name="click_ok_del_tip">长按【ok】可删除</string>
     <string name="video_year">年份</string>
     <string name="video_region">地区</string>
+    <string name="video_category_title">视频索引</string>
+    <string name="category_change_filter_tip">长按【Ok】更改筛选条件</string>
+    <string name="video_filter_dialog_title">筛选</string>
 </resources>

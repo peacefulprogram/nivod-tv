@@ -37,6 +37,7 @@ fun CustomTabRow(
     selectedTabIndex: Int,
     tabs: List<String>,
     initialFocusedIndex: Int = 0,
+    onTabClick: (Int) -> Unit = {},
     onTabFocus: (Int) -> Unit = {}
 ) {
     FocusGroup(modifier = modifier) {
@@ -50,6 +51,7 @@ fun CustomTabRow(
             tabs.forEachIndexed { tabIndex, tabName ->
                 Tab(
                     selected = tabIndex == selectedTabIndex,
+                    onClick = { onTabClick(tabIndex) },
                     onFocus = { onTabFocus(tabIndex) },
                     modifier = if (tabIndex == initialFocusedIndex) Modifier.initiallyFocused() else Modifier.restorableFocus(),
                     colors = TabDefaults.underlinedIndicatorTabColors(

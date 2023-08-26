@@ -3,14 +3,21 @@ package io.github.peacefulprogram.nivod_api
 import cn.hutool.crypto.digest.MD5
 import io.github.peacefulprogram.nivod_api.dto.ChannelRecommendResponse
 import io.github.peacefulprogram.nivod_api.dto.ChannelResponse
+import io.github.peacefulprogram.nivod_api.dto.FilterConditionResponse
 import io.github.peacefulprogram.nivod_api.dto.HotKeywordResponse
 import io.github.peacefulprogram.nivod_api.dto.SearchVideoResponse
+import io.github.peacefulprogram.nivod_api.dto.VideoCategoriesSearchResponse
 import io.github.peacefulprogram.nivod_api.dto.VideoDetailRecommendResponse
 import io.github.peacefulprogram.nivod_api.dto.VideoDetailResponse
 import io.github.peacefulprogram.nivod_api.dto.VideoStreamUrlResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpResponseValidator
+import io.ktor.client.plugins.RedirectResponseException
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.HttpRequestBuilder
@@ -18,9 +25,11 @@ import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.parameters
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.charsets.MalformedInputException
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
@@ -44,7 +53,46 @@ class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean
 
     private fun createKtorClient(logRequest: Boolean): HttpClient {
         return HttpClient(OkHttp) {
-            expectSuccess = true
+            HttpResponseValidator {
+                validateResponse { response ->
+                    if (response.status.value < 300) {
+                        return@validateResponse
+                    }
+                    val exceptionResponseText = try {
+                        response.bodyAsText()
+                    } catch (_: MalformedInputException) {
+                        "<body failed decoding>"
+                    }
+                    if (response.status.value == 403) {
+                        throw RuntimeException(
+                            "请求失败,请确认科学上网后试:" + exceptionResponseText
+                                .run {
+                                    substring(0..(length.coerceAtMost(200)))
+                                }
+                        )
+                    } else if (response.status.value >= 300) {
+                        val exception = when (response.status.value) {
+                            in 300..399 -> RedirectResponseException(
+                                response,
+                                exceptionResponseText
+                            )
+
+                            in 400..499 -> ClientRequestException(
+                                response,
+                                exceptionResponseText
+                            )
+
+                            in 500..599 -> ServerResponseException(
+                                response,
+                                exceptionResponseText
+                            )
+
+                            else -> ResponseException(response, exceptionResponseText)
+                        }
+                        throw exception
+                    }
+                }
+            }
             install(ContentNegotiation) {
                 json(Json {
                     isLenient = true
@@ -65,6 +113,7 @@ class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean
                     })
                 }
                 config {
+                    followRedirects(true)
                     if (disableSSLCheck) {
                         sslSocketFactory(DefaultSSLSocketFactory, DefaultTrustManager)
                         hostnameVerifier { _, _ -> true }
@@ -72,13 +121,27 @@ class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean
                 }
                 addInterceptor { chain ->
                     val resp = chain.proceed(chain.request())
+                    if (resp.code != 200) {
+                        return@addInterceptor resp
+                    }
+                    var code = resp.code
                     val plainBytes = resp.body
                         ?.string()
-                        ?.let { decrypt(it) }
+                        ?.let {
+                            try {
+                                decrypt(it)
+                            } catch (ex: Exception) {
+                                code = 500
+                                "解密响应内容失败:${ex.message}".toByteArray(
+                                    resp.body?.contentType()?.charset() ?: Charsets.UTF_8
+                                )
+                            }
+                        }
                     if (plainBytes == null) {
                         resp
                     } else {
                         resp.newBuilder()
+                            .code(code)
                             .body(plainBytes.toResponseBody(resp.body!!.contentType()))
                             .build()
                     }
@@ -88,7 +151,7 @@ class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean
     }
 
     private fun decrypt(encryptedText: String): ByteArray {
-        val cipherText = encryptedText.decodeHexString()
+        val cipherText = (encryptedText).decodeHexString()
         val key = "diao.com".toByteArray()
         return Cipher.getInstance("DES/ECB/PKCS5Padding").run {
             init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "DES"))
@@ -245,8 +308,38 @@ class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean
     }
 
     suspend fun queryHotKeyword(): HotKeywordResponse {
-        return httpClient.post("https://api.nivodz.com/show/search/hotwords/WEB/3.2") {
+        return httpClient.post("/show/search/hotwords/WEB/3.2") {
             withSign()
+        }.body()
+    }
+
+    suspend fun queryFilterCondition(): FilterConditionResponse {
+        return httpClient.post("/show/filter/condition/WEB/3.2") {
+            withSign()
+        }.body()
+    }
+
+    suspend fun queryVideoOfCategories(
+        sortBy: Int,
+        channelId: Int,
+        showTypeId: Int,
+        regionId: Int,
+        langId: Int,
+        yearRange: String,
+        start: Int
+    ): VideoCategoriesSearchResponse {
+        return httpClient.post("/show/filter/WEB/3.2") {
+            withSign(
+                body = mapOf(
+                    "sort_by" to sortBy.toString(),
+                    "channel_id" to channelId.toString(),
+                    "show_type_id" to showTypeId.toString(),
+                    "region_id" to regionId.toString(),
+                    "lang_id" to langId.toString(),
+                    "year_range" to yearRange,
+                    "start" to start.toString()
+                )
+            )
         }.body()
     }
 

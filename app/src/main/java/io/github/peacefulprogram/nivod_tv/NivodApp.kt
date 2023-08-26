@@ -12,6 +12,7 @@ import io.github.peacefulprogram.nivod_api.DefaultSSLSocketFactory
 import io.github.peacefulprogram.nivod_api.DefaultTrustManager
 import io.github.peacefulprogram.nivod_api.NivodApi
 import io.github.peacefulprogram.nivod_tv.room.NivodDatabase
+import io.github.peacefulprogram.nivod_tv.viewmodel.CategoriesViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.MainViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.PlayHistoryViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.PlaybackViewModel
@@ -90,6 +91,7 @@ class NivodApp : Application(), ImageLoaderFactory {
         viewModelOf(::SearchViewModel)
         viewModelOf(::PlayHistoryViewModel)
         viewModel { parameters -> SearchResultViewModel(parameters.get(), get()) }
+        viewModel { parameters -> CategoriesViewModel(get(), parameters.getOrNull()) }
     }
 
     private fun roomModule() = module {

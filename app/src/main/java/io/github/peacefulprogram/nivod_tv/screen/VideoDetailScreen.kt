@@ -340,6 +340,7 @@ fun VideoInfoRow(videoDetail: VideoDetailEntity, viewModel: VideoDetailViewModel
             title = {},
             scale = CardDefaults.scale(focusedScale = 1f),
             modifier = Modifier
+                .padding(2.dp)
                 .focusRequester(focusRequester)
                 .size(
                     dimensionResource(id = R.dimen.video_preview_card_width) * 1.3f,

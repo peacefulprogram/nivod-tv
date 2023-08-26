@@ -49,6 +49,10 @@
         <activity
             android:name=".activity.PlayHistoryActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".activity.CategoriesActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

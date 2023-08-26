@@ -18,6 +18,7 @@ import io.github.peacefulprogram.nivod_tv.ext.showShortToast
 import io.github.peacefulprogram.nivod_tv.screen.MainScreen
 import io.github.peacefulprogram.nivod_tv.theme.NivodTheme
 import org.koin.android.ext.android.get
+import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {
 
@@ -49,7 +50,8 @@ class MainActivity : ComponentActivity() {
     override fun onBackPressed() {
         val now = System.currentTimeMillis()
         if (now - lastClickBackTime < 2000) {
-            super.onBackPressed()
+            finishAndRemoveTask()
+            exitProcess(0)
         } else {
             lastClickBackTime = now
             this.showShortToast("再次点击退出应用")

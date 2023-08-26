@@ -87,7 +87,13 @@ fun PlayHistoryScreen(viewModel: PlayHistoryViewModel) {
                             text = stringResource(R.string.playback_history),
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier
-                                .focusRequester(titleFocusRequester)
+                                .run {
+                                    if (pagingItems.itemCount == 0) {
+                                        focusRequester(titleFocusRequester)
+                                    } else {
+                                        this
+                                    }
+                                }
                                 .focusable()
                         )
 
@@ -105,6 +111,9 @@ fun PlayHistoryScreen(viewModel: PlayHistoryViewModel) {
                         contentAlignment = Alignment.Center
                     ) {
                         VideoCard(
+                            modifier = if (videoIndex == 0) Modifier.focusRequester(
+                                titleFocusRequester
+                            ) else Modifier,
                             width = cardWidth,
                             height = cardHeight,
                             video = video,
@@ -119,6 +128,12 @@ fun PlayHistoryScreen(viewModel: PlayHistoryViewModel) {
                                     pagingItems.refresh()
                                     coroutineScope.launch {
                                         gridState.scrollToItem(0)
+                                    }
+                                    true
+                                } else if (keyEvent.key == Key.Back && keyEvent.type == KeyEventType.KeyUp && gridState.firstVisibleItemIndex != 0) {
+                                    coroutineScope.launch {
+                                        gridState.scrollToItem(0)
+                                        titleFocusRequester.requestFocus()
                                     }
                                     true
                                 } else {
@@ -141,7 +156,7 @@ fun PlayHistoryScreen(viewModel: PlayHistoryViewModel) {
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshState) {
         try {
             titleFocusRequester.requestFocus()
         } catch (e: Exception) {

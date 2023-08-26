@@ -74,7 +74,11 @@ fun SearchResultScreen(viewModel: SearchResultViewModel) {
                         text = stringResource(R.string.title_search_result),
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier
-                            .focusRequester(titleFocusRequester)
+                            .run {
+                                if (pagingItems.itemCount == 0) {
+                                    focusRequester(titleFocusRequester)
+                                } else this
+                            }
                             .focusable()
                     )
                 }
@@ -85,6 +89,9 @@ fun SearchResultScreen(viewModel: SearchResultViewModel) {
                         contentAlignment = Alignment.Center
                     ) {
                         VideoCard(
+                            modifier = if (videoIndex == 0) Modifier.focusRequester(
+                                titleFocusRequester
+                            ) else Modifier,
                             width = cardWidth,
                             height = cardHeight,
                             video = video,
@@ -96,15 +103,12 @@ fun SearchResultScreen(viewModel: SearchResultViewModel) {
                                     pagingItems.refresh()
                                     coroutineScope.launch {
                                         gridState.scrollToItem(0)
-                                        titleFocusRequester.requestFocus()
                                     }
                                     true
-                                } else if (keyEvent.key == Key.Back) {
-                                    if (keyEvent.type == KeyEventType.KeyUp) {
-                                        coroutineScope.launch {
-                                            gridState.scrollToItem(0)
-                                            titleFocusRequester.requestFocus()
-                                        }
+                                } else if (keyEvent.key == Key.Back && keyEvent.type == KeyEventType.KeyUp && gridState.firstVisibleItemIndex != 0) {
+                                    coroutineScope.launch {
+                                        gridState.scrollToItem(0)
+                                        titleFocusRequester.requestFocus()
                                     }
                                     true
                                 } else {
@@ -128,7 +132,7 @@ fun SearchResultScreen(viewModel: SearchResultViewModel) {
     }
 
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshState) {
         try {
             titleFocusRequester.requestFocus()
         } catch (e: Exception) {
