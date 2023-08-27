@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.core.graphics.drawable.toDrawable
 import androidx.leanback.app.VideoSupportFragment
@@ -142,8 +143,10 @@ class VideoPlaybackFragment(
 
                         override fun onIsPlayingChanged(isPlaying: Boolean) {
                             if (isPlaying) {
+                                requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                                 viewModel.startSaveHistory()
                             } else {
+                                requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                                 viewModel.saveHistory()
                                 viewModel.stopSaveHistory()
                             }
