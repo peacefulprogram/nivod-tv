@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -56,6 +55,7 @@ import androidx.tv.material3.Surface
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import io.github.peacefulprogram.nivod_tv.NivodApp
 import io.github.peacefulprogram.nivod_tv.R
 import io.github.peacefulprogram.nivod_tv.activity.SearchResultActivity
 import io.github.peacefulprogram.nivod_tv.common.Resource
@@ -108,12 +108,11 @@ fun SearchScreen(viewModel: SearchViewModel) {
 
 @OptIn(
     ExperimentalPermissionsApi::class,
-    ExperimentalTvMaterial3Api::class,
-    ExperimentalMaterial3Api::class
+    ExperimentalTvMaterial3Api::class
 )
 @Composable
 fun InputKeywordRow(onSearch: (String) -> Unit) {
-    val speechFocusRequester = remember {
+    val defaultFocusRequester = remember {
         FocusRequester()
     }
     val context = LocalContext.current
@@ -136,39 +135,47 @@ fun InputKeywordRow(onSearch: (String) -> Unit) {
         }
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        AnimatedContent(targetState = sttState.isSpeaking, label = "") { isSpeaking ->
-            IconButton(
-                onClick = {
-                    if (isSpeaking) {
-                        speechToTextParser.stopListening()
-                    } else {
-                        if (permissionState.status.isGranted) {
-                            speechToTextParser.startListening()
+        if (NivodApp.isMicAvailable) {
+            AnimatedContent(targetState = sttState.isSpeaking, label = "") { isSpeaking ->
+                IconButton(
+                    onClick = {
+                        if (isSpeaking) {
+                            speechToTextParser.stopListening()
                         } else {
-                            permissionState.launchPermissionRequest()
+                            if (permissionState.status.isGranted) {
+                                speechToTextParser.startListening()
+                            } else {
+                                permissionState.launchPermissionRequest()
+                            }
                         }
+                    },
+                    scale = ButtonScale.None,
+                    modifier = Modifier.focusRequester(defaultFocusRequester)
+                ) {
+                    if (isSpeaking) {
+                        Icon(
+                            imageVector = Icons.Rounded.Stop,
+                            tint = colorResource(id = R.color.red400),
+                            contentDescription = "stop"
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Rounded.Mic, contentDescription = "speak"
+                        )
                     }
-                },
-                scale = ButtonScale.None,
-                modifier = Modifier.focusRequester(speechFocusRequester)
-            ) {
-                if (isSpeaking) {
-                    Icon(
-                        imageVector = Icons.Rounded.Stop,
-                        tint = colorResource(id = R.color.red400),
-                        contentDescription = "stop"
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Rounded.Mic, contentDescription = "speak"
-                    )
                 }
             }
         }
         Spacer(modifier = Modifier.width(20.dp))
         TextField(value = inputKeyword,
             onValueChange = { inputKeyword = it },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).run {
+                if (!NivodApp.isMicAvailable) {
+                    focusRequester(defaultFocusRequester)
+                } else {
+                    this
+                }
+            },
             placeholder = {
                 if (sttState.isSpeaking) {
                     Text(text = stringResource(R.string.speak_search_keyword))
@@ -188,7 +195,7 @@ fun InputKeywordRow(onSearch: (String) -> Unit) {
     }
 
     LaunchedEffect(sttState.isSpeaking) {
-        speechFocusRequester.requestFocus()
+        defaultFocusRequester.requestFocus()
     }
 }
 

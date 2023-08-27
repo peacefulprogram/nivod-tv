@@ -49,6 +49,10 @@ class NivodApp : Application(), ImageLoaderFactory {
         @SuppressLint("StaticFieldLeak")
         lateinit var context: Context
             private set
+
+        val isMicAvailable: Boolean by lazy {
+            context.packageManager.hasSystemFeature("android.hardware.microphone")
+        }
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
