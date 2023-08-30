@@ -92,7 +92,10 @@ class VideoDetailViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _recommends.emit(Resource.Loading)
             runCoroutineCompatibleCatching {
-                api.queryVideoDetailRecommend(channelId, showTypeId).list
+                api.queryVideoDetailRecommend(
+                    channelId,
+                    showTypeId
+                ).list.distinctBy { it.showIdCode }
             }.onSuccess {
                 _recommends.emit(Resource.Success(it))
             }.onFailure { ex ->
