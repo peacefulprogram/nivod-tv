@@ -55,7 +55,6 @@ import androidx.tv.material3.Surface
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import io.github.peacefulprogram.nivod_tv.NivodApp
 import io.github.peacefulprogram.nivod_tv.R
 import io.github.peacefulprogram.nivod_tv.activity.SearchResultActivity
 import io.github.peacefulprogram.nivod_tv.common.Resource
@@ -135,47 +134,39 @@ fun InputKeywordRow(onSearch: (String) -> Unit) {
         }
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        if (NivodApp.isMicAvailable) {
-            AnimatedContent(targetState = sttState.isSpeaking, label = "") { isSpeaking ->
-                IconButton(
-                    onClick = {
-                        if (isSpeaking) {
-                            speechToTextParser.stopListening()
-                        } else {
-                            if (permissionState.status.isGranted) {
-                                speechToTextParser.startListening()
-                            } else {
-                                permissionState.launchPermissionRequest()
-                            }
-                        }
-                    },
-                    scale = ButtonScale.None,
-                    modifier = Modifier.focusRequester(defaultFocusRequester)
-                ) {
+        AnimatedContent(targetState = sttState.isSpeaking, label = "") { isSpeaking ->
+            IconButton(
+                onClick = {
                     if (isSpeaking) {
-                        Icon(
-                            imageVector = Icons.Rounded.Stop,
-                            tint = colorResource(id = R.color.red400),
-                            contentDescription = "stop"
-                        )
+                        speechToTextParser.stopListening()
                     } else {
-                        Icon(
-                            imageVector = Icons.Rounded.Mic, contentDescription = "speak"
-                        )
+                        if (permissionState.status.isGranted) {
+                            speechToTextParser.startListening()
+                        } else {
+                            permissionState.launchPermissionRequest()
+                        }
                     }
+                },
+                scale = ButtonScale.None,
+                modifier = Modifier.focusRequester(defaultFocusRequester)
+            ) {
+                if (isSpeaking) {
+                    Icon(
+                        imageVector = Icons.Rounded.Stop,
+                        tint = colorResource(id = R.color.red400),
+                        contentDescription = "stop"
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Rounded.Mic, contentDescription = "speak"
+                    )
                 }
             }
         }
         Spacer(modifier = Modifier.width(20.dp))
         TextField(value = inputKeyword,
             onValueChange = { inputKeyword = it },
-            modifier = Modifier.weight(1f).run {
-                if (!NivodApp.isMicAvailable) {
-                    focusRequester(defaultFocusRequester)
-                } else {
-                    this
-                }
-            },
+            modifier = Modifier.weight(1f),
             placeholder = {
                 if (sttState.isSpeaking) {
                     Text(text = stringResource(R.string.speak_search_keyword))
@@ -270,7 +261,7 @@ fun Keyword(
 }
 
 
-@OptIn(ExperimentalTvMaterial3Api::class, ExperimentalTvFoundationApi::class)
+@OptIn(ExperimentalTvFoundationApi::class)
 @Composable
 fun SearchHistory(viewModel: SearchViewModel, onKeywordClick: (String) -> Unit) {
     val pagingItems = viewModel.searchHistoryPager.collectAsLazyPagingItems()
