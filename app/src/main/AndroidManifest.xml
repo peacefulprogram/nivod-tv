@@ -57,6 +57,9 @@
         <activity
             android:name=".activity.CategoriesActivity"
             android:exported="false" />
+
+        <activity android:name=".activity.SettingsActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -17,11 +17,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.leanback.LeanbackPlayerAdapter
+import io.github.peacefulprogram.nivod_api.DefaultSSLSocketFactory
+import io.github.peacefulprogram.nivod_api.DefaultTrustManager
 import io.github.peacefulprogram.nivod_api.NivodApi
+import io.github.peacefulprogram.nivod_tv.NivodApp
 import io.github.peacefulprogram.nivod_tv.common.Resource
 import io.github.peacefulprogram.nivod_tv.ext.dpToPx
 import io.github.peacefulprogram.nivod_tv.ext.secondsToDuration
@@ -31,6 +34,7 @@ import io.github.peacefulprogram.nivod_tv.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 class VideoPlaybackFragment(
     private val viewModel: PlaybackViewModel
@@ -122,15 +126,24 @@ class VideoPlaybackFragment(
         }
     }
 
+    private val okHttpClient = OkHttpClient.Builder()
+        .sslSocketFactory(DefaultSSLSocketFactory, DefaultTrustManager)
+        .hostnameVerifier { _, _ -> true }
+        .proxy(NivodApp.loadProxyConfig())
+        .addInterceptor { chain ->
+            val reqBuilder = chain.request().newBuilder()
+            reqBuilder.header("user-agent", NivodApi.USER_AGENT)
+            reqBuilder.header("referer", NivodApi.REFERER)
+            chain.proceed(reqBuilder.build())
+        }
+        .build()
+
     @UnstableApi
     private fun buildPlayer() {
-        val factory = DefaultHttpDataSource.Factory().apply {
-            setUserAgent(NivodApi.USER_AGENT)
-            setDefaultRequestProperties(mapOf("referer" to NivodApi.REFERER))
-        }
-        val mediaSourceFactory = HlsMediaSource.Factory(factory)
+        val factory =
+            HlsMediaSource.Factory(OkHttpDataSource.Factory { okHttpClient.newCall(it) })
         exoplayer =
-            ExoPlayer.Builder(requireContext()).setMediaSourceFactory(mediaSourceFactory).build()
+            ExoPlayer.Builder(requireContext()).setMediaSourceFactory(factory).build()
                 .apply {
                     prepareGlue(this)
                     playWhenReady = true
@@ -264,5 +277,11 @@ class VideoPlaybackFragment(
         }
     }
 
+    override fun onVideoSizeChanged(width: Int, height: Int) {
+        if (width == 0 || height == 0) {
+            return
+        }
+        super.onVideoSizeChanged(width, height)
+    }
 
 }

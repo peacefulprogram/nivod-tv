@@ -3,6 +3,7 @@ package io.github.peacefulprogram.nivod_tv
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -14,10 +15,12 @@ import io.github.peacefulprogram.nivod_api.NivodApi
 import io.github.peacefulprogram.nivod_tv.room.NivodDatabase
 import io.github.peacefulprogram.nivod_tv.viewmodel.CategoriesViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.MainViewModel
+import io.github.peacefulprogram.nivod_tv.viewmodel.NetworkProxySettings
 import io.github.peacefulprogram.nivod_tv.viewmodel.PlayHistoryViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.PlaybackViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.SearchResultViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.SearchViewModel
+import io.github.peacefulprogram.nivod_tv.viewmodel.SettingsViewModel
 import io.github.peacefulprogram.nivod_tv.viewmodel.VideoDetailViewModel
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -27,6 +30,8 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.util.concurrent.Executors
 import javax.net.ssl.HttpsURLConnection
 
@@ -49,12 +54,32 @@ class NivodApp : Application(), ImageLoaderFactory {
         @SuppressLint("StaticFieldLeak")
         lateinit var context: Context
             private set
+
+        val settingSharedPreferences: SharedPreferences
+            get() = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+        fun loadProxyConfig(): Proxy? {
+            val proxySettings = NetworkProxySettings.loadFromSharedPreference(
+                settingSharedPreferences
+            )
+            return if (proxySettings.proxyEnabled && proxySettings.proxyHost.isNotEmpty()) {
+                Proxy(
+                    Proxy.Type.HTTP,
+                    InetSocketAddress(proxySettings.proxyHost, proxySettings.proxyPort)
+                )
+            } else {
+                null
+            }
+        }
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .okHttpClient(
             OkHttpClient.Builder()
                 .sslSocketFactory(DefaultSSLSocketFactory, DefaultTrustManager)
+                .apply {
+                    proxy(loadProxyConfig())
+                }
                 .hostnameVerifier { _, _ -> true }
                 .addInterceptor(getRefererInterceptor()).build()
         )
@@ -69,7 +94,16 @@ class NivodApp : Application(), ImageLoaderFactory {
     }
 
     private fun httpModule() = module {
-        single { NivodApi(BuildConfig.DEBUG) }
+        single {
+            val proxySettings = NetworkProxySettings.loadFromSharedPreference(
+                settingSharedPreferences
+            )
+            NivodApi(
+                logRequest = BuildConfig.DEBUG,
+                disableSSLCheck = true,
+                defaultProxyConfig = loadProxyConfig()
+            )
+        }
     }
 
     private fun viewModelModule() = module {
@@ -90,6 +124,7 @@ class NivodApp : Application(), ImageLoaderFactory {
         }
         viewModelOf(::SearchViewModel)
         viewModelOf(::PlayHistoryViewModel)
+        viewModelOf(::SettingsViewModel)
         viewModel { parameters -> SearchResultViewModel(parameters.get(), get()) }
         viewModel { parameters -> CategoriesViewModel(get(), parameters.getOrNull()) }
     }

@@ -12,6 +12,7 @@ import io.github.peacefulprogram.nivod_api.dto.VideoDetailResponse
 import io.github.peacefulprogram.nivod_api.dto.VideoStreamUrlResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.engine.ProxyConfig
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpResponseValidator
@@ -33,10 +34,15 @@ import io.ktor.utils.io.charsets.MalformedInputException
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
+import java.net.Proxy
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
-class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean = true) {
+class NivodApi(
+    val logRequest: Boolean = false,
+    private val disableSSLCheck: Boolean = true,
+    defaultProxyConfig: Proxy?
+) {
 
     companion object {
 
@@ -49,9 +55,14 @@ class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean
 
     }
 
-    private val httpClient by lazy { createKtorClient(logRequest) }
+    private var httpClient = createKtorClient(logRequest, defaultProxyConfig)
 
-    private fun createKtorClient(logRequest: Boolean): HttpClient {
+
+    fun recreateKtorClientWithProxy(proxyConfig: ProxyConfig?) {
+        httpClient = createKtorClient(logRequest = logRequest, proxyConfig = proxyConfig)
+    }
+
+    private fun createKtorClient(logRequest: Boolean, proxyConfig: ProxyConfig?): HttpClient {
         return HttpClient(OkHttp) {
             HttpResponseValidator {
                 validateResponse { response ->
@@ -107,6 +118,7 @@ class NivodApi(logRequest: Boolean = false, private val disableSSLCheck: Boolean
                 header(HttpHeaders.Referrer, REFERER)
             }
             engine {
+                proxy = proxyConfig
                 if (logRequest) {
                     addNetworkInterceptor(HttpLoggingInterceptor().apply {
                         level = HttpLoggingInterceptor.Level.HEADERS

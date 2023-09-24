@@ -52,18 +52,31 @@ class MainViewModel(
 
     private fun loadChannelsFromSp() {
         viewModelScope.launch(Dispatchers.Default) {
-            sp.getString("ch", null)?.let {
-                kotlin.runCatching { ChannelInfo.fromJsonArray(it) }
-                    .onSuccess { channelList ->
-                        channelMutex.withLock {
-                            if (channels.value !is Resource.Success) {
-                                initChannelDataFlows(channelList)
-                                _channels.emit(Resource.Success(channelList))
-                            }
+            val cachedChannels = sp.getString("ch", null) ?: "[]"
+            kotlin.runCatching { ChannelInfo.fromJsonArray(cachedChannels) }
+                .onSuccess { channelList ->
+                    channelMutex.withLock {
+                        if (channels.value !is Resource.Success) {
+                            val actualChannels =
+                                if (channelList.isNotEmpty()) channelList else buildDefaultChannels()
+                            initChannelDataFlows(actualChannels)
+                            _channels.emit(Resource.Success(actualChannels))
                         }
                     }
-            }
+                }
         }
+    }
+
+    private fun buildDefaultChannels(): List<ChannelInfo> {
+        return listOf(
+            ChannelInfo(channelId = 1, channelName = "电影"),
+            ChannelInfo(channelId = 2, channelName = "电视剧"),
+            ChannelInfo(channelId = 3, channelName = "综艺"),
+            ChannelInfo(channelId = 4, channelName = "动漫"),
+            ChannelInfo(channelId = 6, channelName = "纪录片"),
+            ChannelInfo(channelId = 15, channelName = "短视频"),
+        )
+
     }
 
     fun loadChannels() {
@@ -82,7 +95,7 @@ class MainViewModel(
                 }
             }.onFailure {
                 Log.e(TAG, "loadChannels: ${it.message}", it)
-                _channels.emit(Resource.Error("加载频道失败:${it.message}", it))
+//                _channels.emit(Resource.Error("加载频道失败:${it.message}", it))
             }
         }
     }

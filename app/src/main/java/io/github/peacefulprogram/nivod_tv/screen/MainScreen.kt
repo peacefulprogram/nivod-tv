@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -59,6 +60,7 @@ import io.github.peacefulprogram.nivod_tv.R
 import io.github.peacefulprogram.nivod_tv.activity.CategoriesActivity
 import io.github.peacefulprogram.nivod_tv.activity.PlayHistoryActivity
 import io.github.peacefulprogram.nivod_tv.activity.SearchActivity
+import io.github.peacefulprogram.nivod_tv.activity.SettingsActivity
 import io.github.peacefulprogram.nivod_tv.activity.VideoDetailActivity
 import io.github.peacefulprogram.nivod_tv.common.Resource
 import io.github.peacefulprogram.nivod_tv.common.compose.CustomTabRow
@@ -138,7 +140,15 @@ fun MainScreen(viewModel: MainViewModel) {
                         imageVector = Icons.Default.Category, contentDescription = "category"
                     )
                 }
-
+                IconButton(
+                    onClick = {
+                        SettingsActivity.startActivity(context)
+                    }, modifier = Modifier.restorableFocus()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings, contentDescription = "settings"
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(5.dp))
